@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topo Hunter by hrichter - Simulador de Topo do Ciclo do Bitcoin</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Bitcoin Watermark -->
+    <div class="bitcoin-watermark">
+        <span>₿</span>
+        <span>₿</span>
+        <span>₿</span>
+        <span>₿</span>
+        <span>₿</span>
+        <span>₿</span>
+        <span>₿</span>
+        <span>₿</span>
+        <span>₿</span>
+        <span>₿</span>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="nav__brand">
+                    <h1>Topo Hunter by hrichter</h1>
+                    <p>Simulador de Topo do Ciclo do Bitcoin</p>
+                </div>
+                <ul class="nav__menu">
+                    <li><a href="#inicio" class="nav__link">Início</a></li>
+                    <li><a href="#indicadores" class="nav__link">Indicadores</a></li>
+                    <li><a href="#grafico" class="nav__link">Gráfico</a></li>
+                    <li><a href="#tabela" class="nav__link">Tabela</a></li>
+                    <li><a href="#simulador" class="nav__link">Simulador</a></li>
+                    <li><a href="#contato" class="nav__link">Contato</a></li>
+                </ul>
+                <button class="nav__toggle" id="nav-toggle">☰</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Hero Section -->
+        <section id="inicio" class="hero section">
+            <div class="container">
+                <div class="hero__content">
+                    <h2>Topo Hunter</h2>
+                    <p class="hero__subtitle">Simulador de Análise de Topo do Ciclo do Bitcoin</p>
+                    
+                    <div class="hero__description">
+                        <p>Nosso algoritmo proprietário combina os 7 indicadores on-chain e macroeconômicos mais relevantes – cada um cuidadosamente ponderado – para formar um score único de risco de topo de ciclo. Ao normalizar cada métrica dentro de intervalos históricos, conseguimos transformar diferentes escalas em um único valor comparável.</p>
+                        
+                        <p>Identificar corretamente os topos de ciclo é vital para quem busca maximizar a quantidade de BTC ao longo do tempo. Realizar parcialmente em momentos de exuberância e recomprar em períodos de medo pode aumentar significativamente a sua posição líquida em satoshis.</p>
+                        
+                        <p>O Topo Hunter foi criado exatamente com esse objetivo: ajudar Bitcoiners a realizar na hora certa, fornecendo um painel claro sobre onde estamos no ciclo de mercado.</p>
+                        
+                        <p>Utilizamos mais de 10 anos de dados históricos para calibrar as fronteiras de risco, assegurando uma abordagem estatisticamente sólida e alinhada às mudanças de regime macroeconômico.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Indicators Section -->
+        <section id="indicadores" class="section">
+            <div class="container">
+                <h2 class="section__title">Indicadores do Algoritmo</h2>
+                <div class="indicators-grid">
+                    <div class="indicator-card">
+                        <div class="indicator-card__header">
+                            <h3>MVRV</h3>
+                            <span class="indicator-weight">(20%)</span>
+                        </div>
+                        <p class="indicator-description">Market Value to Realized Value – mede sobrecompra on-chain.</p>
+                        <small class="indicator-boundaries">Intervalo: 0 → 10</small>
+                    </div>
+                    <div class="indicator-card">
+                        <div class="indicator-card__header">
+                            <h3>Múltiplo de Mayer</h3>
+                            <span class="indicator-weight">(10%)</span>
+                        </div>
+                        <p class="indicator-description">Preço / média móvel de 200 dias.</p>
+                        <small class="indicator-boundaries">Intervalo: 0 → 10</small>
+                    </div>
+                    <div class="indicator-card">
+                        <div class="indicator-card__header">
+                            <h3>Ranking Coinbase</h3>
+                            <span class="indicator-weight">(10%)</span>
+                        </div>
+                        <p class="indicator-description">Posição do app Coinbase na App Store como proxy de interesse de varejo.</p>
+                        <small class="indicator-boundaries">Intervalo: 0 → 10</small>
+                    </div>
+                    <div class="indicator-card">
+                        <div class="indicator-card__header">
+                            <h3>Expansão M2 EUA</h3>
+                            <span class="indicator-weight">(25%)</span>
+                        </div>
+                        <p class="indicator-description">Crescimento mensal anualizado da base monetária americana.</p>
+                        <small class="indicator-boundaries">Intervalo: 0 → 10</small>
+                    </div>
+                    <div class="indicator-card">
+                        <div class="indicator-card__header">
+                            <h3>Taxa de Juros EUA</h3>
+                            <span class="indicator-weight">(15%)</span>
+                        </div>
+                        <p class="indicator-description">Federal Funds Rate – aperto ou afrouxamento monetário.</p>
+                        <small class="indicator-boundaries">Intervalo: 0 → 10</small>
+                    </div>
+                    <div class="indicator-card">
+                        <div class="indicator-card__header">
+                            <h3>Fear & Greed</h3>
+                            <span class="indicator-weight">(10%)</span>
+                        </div>
+                        <p class="indicator-description">Índice de sentimento de mercado cripto.</p>
+                        <small class="indicator-boundaries">Intervalo: 0 → 10</small>
+                    </div>
+                    <div class="indicator-card">
+                        <div class="indicator-card__header">
+                            <h3>Liquidez Mundial</h3>
+                            <span class="indicator-weight">(10%)</span>
+                        </div>
+                        <p class="indicator-description">Índice composto de liquidez global.</p>
+                        <small class="indicator-boundaries">Intervalo: 0 → 10</small>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Chart Section -->
+        <section id="grafico" class="section">
+            <div class="container">
+                <h2 class="section__title">Histórico Gráfico</h2>
+                
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <div class="legend-color legend-color--low"></div>
+                        <span>Baixo Risco (≤ 6.0)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color legend-color--medium"></div>
+                        <span>Aproximação (6.0 - 8.0)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color legend-color--high"></div>
+                        <span>Alto Risco (≥ 8.0)</span>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="historical-chart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Table Section -->
+        <section id="tabela" class="section">
+            <div class="container">
+                <h2 class="section__title">Tabela Histórica</h2>
+                
+                <div class="table-controls">
+                    <div class="form-group">
+                        <label for="period-filter" class="form-label">Filtrar por Período</label>
+                        <select id="period-filter" class="form-control">
+                            <option value="all">Todos os Períodos</option>
+                            <option value="2015-2017">2015-2017</option>
+                            <option value="2018-2020">2018-2020</option>
+                            <option value="2021-2023">2021-2023</option>
+                            <option value="2024-2025">2024-2025</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="status-filter" class="form-label">Filtrar por Status</label>
+                        <select id="status-filter" class="form-control">
+                            <option value="all">Todos os Status</option>
+                            <option value="Baixo Risco">Baixo Risco</option>
+                            <option value="Aproximação">Aproximação</option>
+                            <option value="Alto Risco">Alto Risco</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Período</th>
+                                <th>MVRV</th>
+                                <th>Múltiplo Mayer</th>
+                                <th>Ranking Coinbase</th>
+                                <th>Expansão M2 (%)</th>
+                                <th>Taxa Juros (%)</th>
+                                <th>Fear & Greed</th>
+                                <th>Liquidez Mundial</th>
+                                <th>Score Final</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-table-body">
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Simulator Section -->
+        <section id="simulador" class="section">
+            <div class="container">
+                <h2 class="section__title">Simulador</h2>
+                <div class="simulator-container">
+                    <div class="simulator-inputs">
+                        <div class="input-group">
+                            <label for="sim-mvrv" class="form-label">MVRV</label>
+                            <input type="number" id="sim-mvrv" class="form-control" min="0" max="10" step="0.1" value="6.5">
+                            <span class="input-weight">Peso: 20%</span>
+                        </div>
+                        <div class="input-group">
+                            <label for="sim-mayer" class="form-label">Múltiplo de Mayer</label>
+                            <input type="number" id="sim-mayer" class="form-control" min="0" max="10" step="0.1" value="4.2">
+                            <span class="input-weight">Peso: 10%</span>
+                        </div>
+                        <div class="input-group">
+                            <label for="sim-coinbase" class="form-label">Ranking Coinbase</label>
+                            <input type="number" id="sim-coinbase" class="form-control" min="0" max="10" step="0.1" value="7.2">
+                            <span class="input-weight">Peso: 10%</span>
+                        </div>
+                        <div class="input-group">
+                            <label for="sim-m2" class="form-label">Expansão M2 EUA</label>
+                            <input type="number" id="sim-m2" class="form-control" min="0" max="10" step="0.1" value="7.8">
+                            <span class="input-weight">Peso: 25%</span>
+                        </div>
+                        <div class="input-group">
+                            <label for="sim-rates" class="form-label">Taxa de Juros EUA</label>
+                            <input type="number" id="sim-rates" class="form-control" min="0" max="10" step="0.1" value="5.2">
+                            <span class="input-weight">Peso: 15%</span>
+                        </div>
+                        <div class="input-group">
+                            <label for="sim-fear" class="form-label">Fear & Greed</label>
+                            <input type="number" id="sim-fear" class="form-control" min="0" max="10" step="0.1" value="8.6">
+                            <span class="input-weight">Peso: 10%</span>
+                        </div>
+                        <div class="input-group">
+                            <label for="sim-liq" class="form-label">Liquidez Mundial</label>
+                            <input type="number" id="sim-liq" class="form-control" min="0" max="10" step="0.1" value="7.5">
+                            <span class="input-weight">Peso: 10%</span>
+                        </div>
+                    </div>
+
+                    <div class="simulator-result">
+                        <div class="result-display">
+                            <h3>Score Calculado</h3>
+                            <div class="score-display" id="calculated-score">6.95</div>
+                            <div id="score-status" class="status status--warning">Aproximação</div>
+                        </div>
+
+                        <div class="score-breakdown">
+                            <h4>Detalhamento do Score</h4>
+                            <div id="score-breakdown-list">
+                                <!-- Breakdown will be populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <div class="simulator-actions">
+                            <button id="update-simulator" class="btn btn--primary">Calcular Score</button>
+                            <button id="reset-simulator" class="btn btn--secondary">Atualizar Valores</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contato" class="section" style="background: #0A2540; color: white;">
+            <div class="container">
+                <div class="contact-content">
+                    <div class="contact-info">
+                        <h3>Contato</h3>
+                        <p>Site criado por hrichter, analista quantitativo. Atuo há 10 anos no mercado de tecnologia e estou no mercado de cripto desde 2020.</p>
+                        <p>Para dúvidas, sugestões ou feedback sobre o Topo Hunter:</p>
+                        <div class="contact-item">
+                            <strong>Email:</strong> <a href="mailto:hrichter@dmail.ai">hrichter@dmail.ai</a>
+                        </div>
+                    </div>
+                    
+                    <div class="donation-info">
+                        <h3>Doações</h3>
+                        <p>Se o Topo Hunter ajudou você a tomar melhores decisões, considere fazer uma doação:</p>
+                        
+                        <div class="donation-section">
+                            <div class="donation-item">
+                                <strong>Lightning Network:</strong>
+                                <div class="donation-address">
+                                    <code>lnbc1p583a50pp57ggml5pvls7tuhkajra42wz2zws48zlnastw9lkt8uprxq3jzt7sdqqcqzzsxqrrsssp5wqfzmvslf560hgxer0g0h5x4u5s536ywglf6fmrm5whd0l80prhs9qxpqysgqdw8evxnvpz8gx2zt7a0fq50e5xvjyr5py0k6ec2x3q26877dg6dz2k0j5mvtjjuhqc63vvpl4uu07hc6s6cmydxmdtxl0x9du5gqrlsp8n0avy</code>
+                                </div>
+                            </div>
+                            
+                            <div class="donation-item">
+                                <strong>Bitcoin Network:</strong>
+                                <div class="donation-address">
+                                    <code>bc1quaq3lqr0n2kn0e6feudyl7zjun23ftjn0k3kys</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="disclaimer">
+                    <h4>⚠️ Aviso Legal</h4>
+                    <p><strong>Este simulador é apenas para fins educacionais e não constitui aconselhamento financeiro.</strong></p>
+                    <p>O Bitcoin e outros ativos digitais são investimentos voláteis e de alto risco. Nunca invista mais do que você pode perder.</p>
+                    <p>Consulte sempre um consultor financeiro qualificado antes de tomar decisões de investimento.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Topo Hunter by hrichter. Todos os direitos reservados.</p>
+            <p>Desenvolvido para a comunidade Bitcoin brasileira</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
