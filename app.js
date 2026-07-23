@@ -324,125 +324,296 @@ function initTableControls() {
 }
 
 // -----------------------------------------------
-// 4. Simulator
+// 4. Simulator (Topo Hunter / Bottom Hunter)
 // -----------------------------------------------
-function initSimulator() {
-    const inputs = {
-        mvrv: document.getElementById('sim-mvrv'),
-        mayer: document.getElementById('sim-mayer'),
-        coinbase: document.getElementById('sim-coinbase'),
-        m2: document.getElementById('sim-m2'),
-        rates: document.getElementById('sim-rates'),
-        fear: document.getElementById('sim-fear'),
-        liq: document.getElementById('sim-liq')
-    };
 
+// Topo Hunter looks for cycle-top euphoria; Bottom Hunter mirrors the same
+// seven indicators plus an ATH-drawdown indicator, but scores the opposite
+// (capitulation/apathy) conditions that historically precede a new bull cycle.
+const HUNTER_MODES = {
+    topo: {
+        label: 'Topo Hunter',
+        scoreTitle: 'Score de Topo de Ciclo',
+        indicators: [
+            { id: 'mvrv', name: 'MVRV', weight: 20, source: 'manual', help: 'Sem API pública gratuita confiável para o MVRV real. Consulte um agregador on-chain (ex: LookIntoBitcoin, CryptoQuant) e insira o valor manualmente.' },
+            { id: 'mayer', name: 'Múltiplo de Mayer', weight: 10, source: 'live' },
+            { id: 'coinbase', name: 'Ranking Coinbase', weight: 10, source: 'live' },
+            { id: 'm2', name: 'Expansão M2 EUA', weight: 25, source: 'live' },
+            { id: 'rates', name: 'Taxa de Juros EUA', weight: 15, source: 'live' },
+            { id: 'fear', name: 'Fear & Greed', weight: 10, source: 'live' },
+            { id: 'liq', name: 'Liquidez Mundial', weight: 10, source: 'manual', help: 'Índice composto proprietário, sem fonte pública única — insira manualmente.' }
+        ],
+        defaults: { mvrv: 6.5, mayer: 4.2, coinbase: 7.2, m2: 7.8, rates: 5.2, fear: 8.6, liq: 7.5 },
+        statusRanges: [
+            { max: 6, label: 'Baixo Risco', cssClass: 'success' },
+            { max: 8, label: 'Aproximação', cssClass: 'warning' },
+            { max: Infinity, label: 'Alto Risco', cssClass: 'error' }
+        ]
+    },
+    bottom: {
+        label: 'Bottom Hunter',
+        scoreTitle: 'Score de Fundo de Ciclo',
+        indicators: [
+            { id: 'mvrv', name: 'MVRV', weight: 19, source: 'manual', help: 'Sem API pública gratuita confiável para o MVRV real. Consulte um agregador on-chain (ex: LookIntoBitcoin, CryptoQuant) e insira o valor manualmente.' },
+            { id: 'mayer', name: 'Múltiplo de Mayer', weight: 9.5, source: 'live' },
+            { id: 'coinbase', name: 'Ranking Coinbase', weight: 9.5, source: 'live' },
+            { id: 'm2', name: 'Expansão M2 EUA', weight: 23.75, source: 'live' },
+            { id: 'rates', name: 'Taxa de Juros EUA', weight: 14.25, source: 'live' },
+            { id: 'fear', name: 'Fear & Greed', weight: 9.5, source: 'live' },
+            { id: 'liq', name: 'Liquidez Mundial', weight: 9.5, source: 'manual', help: 'Índice composto proprietário, sem fonte pública única — insira manualmente.' },
+            { id: 'ath', name: 'Drawdown do ATH', weight: 5, source: 'live' }
+        ],
+        defaults: { mvrv: 3.0, mayer: 3.5, coinbase: 2.8, m2: 3.2, rates: 6.5, fear: 3.0, liq: 3.5, ath: 4.5 },
+        statusRanges: [
+            { max: 6, label: 'Sem Sinal de Fundo', cssClass: 'info' },
+            { max: 8, label: 'Zona de Acumulação', cssClass: 'accumulation' },
+            { max: Infinity, label: 'Oportunidade de Fundo', cssClass: 'success' }
+        ]
+    }
+};
+
+// Historical bounds used to normalize raw fetched metrics onto the 0-10 scale
+// the simulator works with. These are heuristic (industry rules of thumb),
+// not guaranteed thresholds — the tool is educational, per the disclaimer.
+const RAW_METRIC_BOUNDS = {
+    mayer: { min: 0.5, max: 3.0 },   // Múltiplo de Mayer (preço / SMA200)
+    coinbase: { min: 1, max: 100 },  // posição no ranking de apps grátis (Finanças)
+    m2: { min: -2, max: 10 },        // expansão do M2 EUA, % anualizado
+    rates: { min: 0, max: 6 },       // Fed Funds Rate, %
+    fear: { min: 0, max: 100 },      // Fear & Greed Index
+    ath: { min: 0, max: 85 }         // drawdown desde a máxima histórica, %
+};
+
+function normalizeRawMetric(id, raw, mode) {
+    const bounds = RAW_METRIC_BOUNDS[id];
+    if (!bounds || raw === null || raw === undefined || Number.isNaN(raw)) return null;
+    let t = (raw - bounds.min) / (bounds.max - bounds.min);
+    t = Math.max(0, Math.min(1, t));
+
+    switch (id) {
+        case 'mayer': // alto = sobreaquecido (topo); baixo = subvalorizado (fundo)
+            return mode === 'topo' ? t * 10 : (1 - t) * 10;
+        case 'coinbase': // rank numérico baixo = app popular (euforia de varejo)
+            return mode === 'topo' ? (1 - t) * 10 : t * 10;
+        case 'm2': // expansão forte = liquidez alimentando o topo
+            return mode === 'topo' ? t * 10 : (1 - t) * 10;
+        case 'rates': // juros baixos = dinheiro fácil (favorece topo); juros altos = aperto (favorece fundo)
+            return mode === 'topo' ? (1 - t) * 10 : t * 10;
+        case 'fear': // ganância extrema = topo; medo extremo = fundo
+            return mode === 'topo' ? t * 10 : (1 - t) * 10;
+        case 'ath': // só existe no Bottom Hunter: drawdown profundo = sinal de fundo
+            return t * 10;
+        default:
+            return null;
+    }
+}
+
+async function fetchLiveMetrics() {
+    const raw = {};
+    const failed = [];
+
+    try {
+        const r = await fetch('https://api.alternative.me/fng/?limit=1');
+        if (!r.ok) throw new Error('fear&greed request failed');
+        const data = await r.json();
+        raw.fear = parseFloat(data.data[0].value);
+    } catch (e) {
+        failed.push('fear');
+    }
+
+    try {
+        const [coinRes, chartRes] = await Promise.all([
+            fetch('https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false'),
+            fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=200&interval=daily')
+        ]);
+        if (!coinRes.ok || !chartRes.ok) throw new Error('coingecko request failed');
+        const coinData = await coinRes.json();
+        const chartData = await chartRes.json();
+        raw.ath = Math.abs(coinData.market_data.ath_change_percentage.usd);
+        const prices = chartData.prices.map(p => p[1]);
+        const sma200 = prices.reduce((a, b) => a + b, 0) / prices.length;
+        raw.mayer = coinData.market_data.current_price.usd / sma200;
+    } catch (e) {
+        failed.push('mayer', 'ath');
+    }
+
+    try {
+        const r = await fetch('https://itunes.apple.com/us/rss/topfreeapplications/limit=200/genre=6015/json');
+        if (!r.ok) throw new Error('apple rss request failed');
+        const data = await r.json();
+        const entries = (data.feed && data.feed.entry) || [];
+        const idx = entries.findIndex(e => (e['im:name'] && e['im:name'].label || '').toLowerCase().includes('coinbase'));
+        raw.coinbase = idx >= 0 ? idx + 1 : entries.length || 100;
+    } catch (e) {
+        failed.push('coinbase');
+    }
+
+    try {
+        const [m2Res, ratesRes] = await Promise.all([
+            fetch('/api/fred?series=m2'),
+            fetch('/api/fred?series=rates')
+        ]);
+        if (!m2Res.ok || !ratesRes.ok) throw new Error('fred proxy request failed');
+        const m2Data = await m2Res.json();
+        const ratesData = await ratesRes.json();
+
+        const m2Values = (m2Data.observations || []).filter(o => o.value !== '.').map(o => parseFloat(o.value));
+        if (m2Values.length >= 2) {
+            const monthlyGrowth = (m2Values[0] / m2Values[1]) - 1;
+            raw.m2 = (Math.pow(1 + monthlyGrowth, 12) - 1) * 100;
+        } else {
+            failed.push('m2');
+        }
+
+        const latestRate = (ratesData.observations || []).find(o => o.value !== '.');
+        if (latestRate) {
+            raw.rates = parseFloat(latestRate.value);
+        } else {
+            failed.push('rates');
+        }
+    } catch (e) {
+        failed.push('m2', 'rates');
+    }
+
+    return { raw, failed };
+}
+
+function initSimulator() {
+    const inputsContainer = document.getElementById('simulator-inputs');
+    const scoreTitle = document.getElementById('simulator-score-title');
     const scoreDisplay = document.getElementById('calculated-score');
     const statusDisplay = document.getElementById('score-status');
     const breakdownList = document.getElementById('score-breakdown-list');
-    const updateButton = document.getElementById('update-simulator');
-    const resetButton = document.getElementById('reset-simulator');
+    const calcButton = document.getElementById('update-simulator');
+    const fetchButton = document.getElementById('fetch-live-data');
+    const fetchStatusMsg = document.getElementById('fetch-status-msg');
+    const modeButtons = document.querySelectorAll('.mode-btn');
 
-    // Set initial values from defaultIndicatorValues
-    if (inputs.mvrv) inputs.mvrv.value = appData.defaultIndicatorValues.mvrv;
-    if (inputs.mayer) inputs.mayer.value = appData.defaultIndicatorValues.mayer;
-    if (inputs.coinbase) inputs.coinbase.value = appData.defaultIndicatorValues.coinbase;
-    if (inputs.m2) inputs.m2.value = appData.defaultIndicatorValues.m2;
-    if (inputs.rates) inputs.rates.value = appData.defaultIndicatorValues.rates;
-    if (inputs.fear) inputs.fear.value = appData.defaultIndicatorValues.fear;
-    if (inputs.liq) inputs.liq.value = appData.defaultIndicatorValues.liq;
+    if (!inputsContainer) return;
+
+    let currentMode = 'topo';
+    // Keeps whatever value the user has typed/fetched per indicator, per mode.
+    const values = { topo: { ...HUNTER_MODES.topo.defaults }, bottom: { ...HUNTER_MODES.bottom.defaults } };
+
+    function renderInputs() {
+        const config = HUNTER_MODES[currentMode];
+        inputsContainer.innerHTML = '';
+
+        config.indicators.forEach(ind => {
+            const group = document.createElement('div');
+            group.className = 'input-group';
+            group.dataset.indicator = ind.id;
+
+            const manualBadge = ind.source === 'manual'
+                ? `<span class="manual-badge" title="${ind.help}">manual</span>`
+                : '';
+
+            group.innerHTML = `
+                <label for="sim-${ind.id}" class="form-label">${ind.name}${manualBadge}</label>
+                <input type="number" id="sim-${ind.id}" class="form-control" min="0" max="10" step="0.1" value="${values[currentMode][ind.id]}">
+                <span class="input-weight">Peso: ${ind.weight}%</span>
+            `;
+            inputsContainer.appendChild(group);
+
+            const input = group.querySelector('input');
+            input.addEventListener('input', () => {
+                values[currentMode][ind.id] = parseFloat(input.value) || 0;
+                calculateScore();
+            });
+        });
+
+        scoreTitle.textContent = config.scoreTitle;
+    }
 
     function calculateScore() {
-        const values = {};
+        const config = HUNTER_MODES[currentMode];
         let totalScore = 0;
 
-        // Get current values from inputs
-        Object.keys(inputs).forEach(key => {
-            if (inputs[key]) {
-                values[key] = parseFloat(inputs[key].value) || 0;
-            }
+        config.indicators.forEach(ind => {
+            const value = values[currentMode][ind.id] || 0;
+            totalScore += value * (ind.weight / 100);
         });
 
-        // Calculate score based on weighted average
-        const weights = {
-            mvrv: 0.20,
-            mayer: 0.10,
-            coinbase: 0.10,
-            m2: 0.25,
-            rates: 0.15,
-            fear: 0.10,
-            liq: 0.10
-        };
-
-        Object.keys(weights).forEach(key => {
-            if (values[key] !== undefined) {
-                totalScore += values[key] * weights[key];
-            }
-        });
-
-        // Update display
         scoreDisplay.textContent = totalScore.toFixed(2);
 
-        // Update status with color
-        let status, statusClass;
-        if (totalScore <= 6) {
-            status = 'Baixo Risco';
-            statusClass = 'success';
-        } else if (totalScore <= 8) {
-            status = 'Aproximação';
-            statusClass = 'warning';
-        } else {
-            status = 'Alto Risco';
-            statusClass = 'error';
-        }
+        const range = config.statusRanges.find(r => totalScore <= r.max);
+        statusDisplay.textContent = range.label;
+        statusDisplay.className = `status status--${range.cssClass}`;
 
-        statusDisplay.textContent = status;
-        statusDisplay.className = `status status--${statusClass}`;
-
-        // Update breakdown
         breakdownList.innerHTML = '';
-        Object.keys(weights).forEach(key => {
-            const indicator = appData.indicators.find(i => i.id === key);
-            const name = indicator ? indicator.name : key.toUpperCase();
-            const weight = weights[key];
-            const contribution = (values[key] || 0) * weight;
-            
+        config.indicators.forEach(ind => {
+            const value = values[currentMode][ind.id] || 0;
+            const contribution = value * (ind.weight / 100);
+
             const breakdownItem = document.createElement('div');
             breakdownItem.className = 'breakdown-item';
             breakdownItem.innerHTML = `
-                <span class="breakdown-label">${name} (${(weight * 100).toFixed(0)}%)</span>
+                <span class="breakdown-label">${ind.name} (${ind.weight}%)</span>
                 <span class="breakdown-value">${contribution.toFixed(2)}</span>
             `;
             breakdownList.appendChild(breakdownItem);
         });
     }
 
-    // Add event listeners to all inputs for real-time calculation
-    Object.keys(inputs).forEach(key => {
-        if (inputs[key]) {
-            inputs[key].addEventListener('input', calculateScore);
-            inputs[key].addEventListener('change', calculateScore);
-        }
-    });
-
-    // Update button functionality
-    if (updateButton) {
-        updateButton.addEventListener('click', calculateScore);
+    function setMode(mode) {
+        currentMode = mode;
+        modeButtons.forEach(btn => {
+            const isActive = btn.dataset.mode === mode;
+            btn.classList.toggle('mode-btn--active', isActive);
+            btn.setAttribute('aria-selected', String(isActive));
+        });
+        fetchStatusMsg.textContent = '';
+        renderInputs();
+        calculateScore();
     }
 
-    // Reset button functionality
-    if (resetButton) {
-        resetButton.addEventListener('click', function() {
-            Object.keys(inputs).forEach(key => {
-                if (inputs[key]) {
-                    inputs[key].value = appData.defaultIndicatorValues[key];
+    modeButtons.forEach(btn => {
+        btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    });
+
+    if (calcButton) {
+        calcButton.addEventListener('click', calculateScore);
+    }
+
+    if (fetchButton) {
+        fetchButton.addEventListener('click', async function() {
+            fetchButton.disabled = true;
+            fetchButton.classList.add('is-loading');
+            fetchStatusMsg.textContent = 'Buscando dados ao vivo...';
+
+            const { raw, failed } = await fetchLiveMetrics();
+            const config = HUNTER_MODES[currentMode];
+            let updated = 0;
+
+            config.indicators.forEach(ind => {
+                if (ind.source !== 'live') return;
+                const normalized = normalizeRawMetric(ind.id, raw[ind.id], currentMode);
+                const group = inputsContainer.querySelector(`[data-indicator="${ind.id}"]`);
+                if (normalized !== null && !failed.includes(ind.id)) {
+                    values[currentMode][ind.id] = Math.round(normalized * 100) / 100;
+                    if (group) {
+                        group.querySelector('input').value = values[currentMode][ind.id];
+                        group.classList.remove('input-group--stale');
+                    }
+                    updated += 1;
+                } else if (group) {
+                    group.classList.add('input-group--stale');
                 }
             });
+
             calculateScore();
+
+            const liveCount = config.indicators.filter(i => i.source === 'live').length;
+            fetchStatusMsg.textContent = updated === liveCount
+                ? `Atualizado com dados ao vivo (${updated}/${liveCount} indicadores).`
+                : `Atualizado parcialmente (${updated}/${liveCount} indicadores). Os demais mantiveram o valor manual — veja o destaque em dourado.`;
+
+            fetchButton.disabled = false;
+            fetchButton.classList.remove('is-loading');
         });
     }
 
-    // Initial calculation
+    renderInputs();
     calculateScore();
 }
 

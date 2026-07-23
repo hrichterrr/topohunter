@@ -214,50 +214,22 @@
         <section id="simulador" class="section">
             <div class="container">
                 <h2 class="section__title">Simulador</h2>
+
+                <div class="hunter-mode-toggle" role="tablist" aria-label="Modo do simulador">
+                    <button type="button" class="mode-btn mode-btn--active" data-mode="topo" role="tab" aria-selected="true">🔺 Topo Hunter</button>
+                    <button type="button" class="mode-btn" data-mode="bottom" role="tab" aria-selected="false">🔻 Bottom Hunter</button>
+                </div>
+
                 <div class="simulator-container">
-                    <div class="simulator-inputs">
-                        <div class="input-group">
-                            <label for="sim-mvrv" class="form-label">MVRV</label>
-                            <input type="number" id="sim-mvrv" class="form-control" min="0" max="10" step="0.1" value="6.5">
-                            <span class="input-weight">Peso: 20%</span>
-                        </div>
-                        <div class="input-group">
-                            <label for="sim-mayer" class="form-label">Múltiplo de Mayer</label>
-                            <input type="number" id="sim-mayer" class="form-control" min="0" max="10" step="0.1" value="4.2">
-                            <span class="input-weight">Peso: 10%</span>
-                        </div>
-                        <div class="input-group">
-                            <label for="sim-coinbase" class="form-label">Ranking Coinbase</label>
-                            <input type="number" id="sim-coinbase" class="form-control" min="0" max="10" step="0.1" value="7.2">
-                            <span class="input-weight">Peso: 10%</span>
-                        </div>
-                        <div class="input-group">
-                            <label for="sim-m2" class="form-label">Expansão M2 EUA</label>
-                            <input type="number" id="sim-m2" class="form-control" min="0" max="10" step="0.1" value="7.8">
-                            <span class="input-weight">Peso: 25%</span>
-                        </div>
-                        <div class="input-group">
-                            <label for="sim-rates" class="form-label">Taxa de Juros EUA</label>
-                            <input type="number" id="sim-rates" class="form-control" min="0" max="10" step="0.1" value="5.2">
-                            <span class="input-weight">Peso: 15%</span>
-                        </div>
-                        <div class="input-group">
-                            <label for="sim-fear" class="form-label">Fear & Greed</label>
-                            <input type="number" id="sim-fear" class="form-control" min="0" max="10" step="0.1" value="8.6">
-                            <span class="input-weight">Peso: 10%</span>
-                        </div>
-                        <div class="input-group">
-                            <label for="sim-liq" class="form-label">Liquidez Mundial</label>
-                            <input type="number" id="sim-liq" class="form-control" min="0" max="10" step="0.1" value="7.5">
-                            <span class="input-weight">Peso: 10%</span>
-                        </div>
+                    <div class="simulator-inputs" id="simulator-inputs">
+                        <!-- Populated by JavaScript per mode (Topo Hunter / Bottom Hunter) -->
                     </div>
 
                     <div class="simulator-result">
                         <div class="result-display">
-                            <h3>Score Calculado</h3>
-                            <div class="score-display" id="calculated-score">6.95</div>
-                            <div id="score-status" class="status status--warning">Aproximação</div>
+                            <h3 id="simulator-score-title">Score Calculado</h3>
+                            <div class="score-display" id="calculated-score">–</div>
+                            <div id="score-status" class="status status--warning">–</div>
                         </div>
 
                         <div class="score-breakdown">
@@ -269,8 +241,9 @@
 
                         <div class="simulator-actions">
                             <button id="update-simulator" class="btn btn--primary">Calcular Score</button>
-                            <button id="reset-simulator" class="btn btn--secondary">Atualizar Valores</button>
+                            <button id="fetch-live-data" class="btn btn--secondary">Atualizar Valores</button>
                         </div>
+                        <p class="simulator-fetch-status" id="fetch-status-msg"></p>
                     </div>
                 </div>
             </div>
