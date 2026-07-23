@@ -10,31 +10,79 @@ const appData = {
         "O Topo Hunter foi criado exatamente com esse objetivo: ajudar Bitcoiners a realizar na hora certa, fornecendo um painel claro sobre onde estamos no ciclo de mercado.",
         "Utilizamos mais de 10 anos de dados históricos para calibrar as fronteiras de risco, assegurando uma abordagem estatisticamente sólida e alinhada às mudanças de regime macroeconômico."
     ],
-    "indicators": [
-        {"id": "mvrv", "name": "MVRV", "weight": 20, "description": "Market Value to Realized Value – mede sobrecompra on-chain."},
-        {"id": "mayer", "name": "Múltiplo de Mayer", "weight": 10, "description": "Preço / média móvel de 200 dias."},
-        {"id": "coinbase", "name": "Ranking Coinbase", "weight": 10, "description": "Posição do app Coinbase na App Store como proxy de interesse de varejo."},
-        {"id": "m2", "name": "Expansão do M2 EUA", "weight": 25, "description": "Crescimento mensal anualizado da base monetária americana."},
-        {"id": "rates", "name": "Taxa de Juros EUA", "weight": 15, "description": "Federal Funds Rate – aperto ou afrouxamento monetário."},
-        {"id": "fear", "name": "Fear & Greed", "weight": 10, "description": "Índice de sentimento de mercado cripto."},
-        {"id": "liq", "name": "Liquidez Mundial", "weight": 10, "description": "Índice composto de liquidez global."}
-    ],
-    "defaultIndicatorValues": {
-        "mvrv": 6.5,
-        "mayer": 4.2,
-        "coinbase": 7.2,
-        "m2": 7.8,
-        "rates": 5.2,
-        "fear": 8.6,
-        "liq": 7.5
-    },
     "donations": {
         "lightning": "lnbc1p583a50pp57ggml5pvls7tuhkajra42wz2zws48zlnastw9lkt8uprxq3jzt7sdqqcqzzsxqrrsssp5wqfzmvslf560hgxer0g0h5x4u5s536ywglf6fmrm5whd0l80prhs9qxpqysgqdw8evxnvpz8gx2zt7a0fq50e5xvjyr5py0k6ec2x3q26877dg6dz2k0j5mvtjjuhqc63vvpl4uu07hc6s6cmydxmdtxl0x9du5gqrlsp8n0avy",
         "onchain": "bc1quaq3lqr0n2kn0e6feudyl7zjun23ftjn0k3kys"
     }
 };
 
+// -----------------------------------------------
+// Hunter mode configuration (Topo Hunter / Bottom Hunter)
+// -----------------------------------------------
+// Topo Hunter looks for cycle-top euphoria; Bottom Hunter mirrors the same
+// seven indicators plus an ATH-drawdown indicator, but scores the opposite
+// (capitulation/apathy) conditions that historically precede a new bull cycle.
+// A single global toggle (see initGlobalModeToggle) switches every section —
+// indicators, chart, table and simulator — between the two.
+const HUNTER_MODES = {
+    topo: {
+        label: 'Topo Hunter',
+        scoreTitle: 'Score de Topo de Ciclo',
+        chartLabel: 'Score Topo Hunter',
+        indicators: [
+            { id: 'mvrv', name: 'MVRV', weight: 20, source: 'manual', description: 'Market Value to Realized Value – mede sobrecompra on-chain.', help: 'Sem API pública gratuita confiável para o MVRV real. Consulte um agregador on-chain (ex: LookIntoBitcoin, CryptoQuant) e insira o valor manualmente.' },
+            { id: 'mayer', name: 'Múltiplo de Mayer', weight: 10, source: 'live', description: 'Preço / média móvel de 200 dias.' },
+            { id: 'coinbase', name: 'Ranking Coinbase', weight: 10, source: 'live', description: 'Posição do app Coinbase na App Store como proxy de interesse de varejo.' },
+            { id: 'm2', name: 'Expansão M2 EUA', weight: 25, source: 'live', description: 'Crescimento mensal anualizado da base monetária americana.' },
+            { id: 'rates', name: 'Taxa de Juros EUA', weight: 15, source: 'live', description: 'Federal Funds Rate – aperto ou afrouxamento monetário.' },
+            { id: 'fear', name: 'Fear & Greed', weight: 10, source: 'live', description: 'Índice de sentimento de mercado cripto.' },
+            { id: 'liq', name: 'Liquidez Mundial', weight: 10, source: 'manual', description: 'Índice composto de liquidez global.', help: 'Índice composto proprietário, sem fonte pública única — insira manualmente.' }
+        ],
+        defaults: { mvrv: 6.5, mayer: 4.2, coinbase: 7.2, m2: 7.8, rates: 5.2, fear: 8.6, liq: 7.5 },
+        statusRanges: [
+            { max: 6, label: 'Baixo Risco', cssClass: 'success' },
+            { max: 8, label: 'Aproximação', cssClass: 'warning' },
+            { max: Infinity, label: 'Alto Risco', cssClass: 'error' }
+        ]
+    },
+    bottom: {
+        label: 'Bottom Hunter',
+        scoreTitle: 'Score de Fundo de Ciclo',
+        chartLabel: 'Score Bottom Hunter',
+        indicators: [
+            { id: 'mvrv', name: 'MVRV', weight: 19, source: 'manual', description: 'Market Value to Realized Value – valores baixos (próximos ou abaixo de 1) indicam subvalorização e potencial fundo de mercado.', help: 'Sem API pública gratuita confiável para o MVRV real. Consulte um agregador on-chain (ex: LookIntoBitcoin, CryptoQuant) e insira o valor manualmente.' },
+            { id: 'mayer', name: 'Múltiplo de Mayer', weight: 9.5, source: 'live', description: 'Preço / média móvel de 200 dias – valores abaixo de 1 historicamente marcam zonas de fundo.' },
+            { id: 'coinbase', name: 'Ranking Coinbase', weight: 9.5, source: 'live', description: 'Queda no ranking do app Coinbase sinaliza apatia do varejo, típica de fundos de ciclo.' },
+            { id: 'm2', name: 'Expansão M2 EUA', weight: 23.75, source: 'live', description: 'Contração ou desaceleração do M2 americano, associada a apertos de liquidez que precedem fundos de mercado.' },
+            { id: 'rates', name: 'Taxa de Juros EUA', weight: 14.25, source: 'live', description: 'Federal Funds Rate – juros altos (aperto monetário) historicamente coincidem com fundos de ciclo.' },
+            { id: 'fear', name: 'Fear & Greed', weight: 9.5, source: 'live', description: 'Medo extremo no mercado cripto historicamente marca fundos de mercado.' },
+            { id: 'liq', name: 'Liquidez Mundial', weight: 9.5, source: 'manual', description: 'Contração da liquidez global associada a fundos de ciclo.', help: 'Índice composto proprietário, sem fonte pública única — insira manualmente.' },
+            { id: 'ath', name: 'Drawdown do ATH', weight: 5, source: 'live', description: 'Queda percentual em relação à máxima histórica – quedas profundas historicamente marcam zonas de fundo.' }
+        ],
+        defaults: { mvrv: 3.0, mayer: 3.5, coinbase: 2.8, m2: 3.2, rates: 6.5, fear: 3.0, liq: 3.5, ath: 4.5 },
+        statusRanges: [
+            { max: 6, label: 'Sem Sinal de Fundo', cssClass: 'info' },
+            { max: 8, label: 'Zona de Acumulação', cssClass: 'accumulation' },
+            { max: Infinity, label: 'Oportunidade de Fundo', cssClass: 'success' }
+        ]
+    }
+};
+
+const STATUS_COLOR_HEX = {
+    success: '#28A745',
+    warning: '#FFA500',
+    error: '#DC3545',
+    info: '#6C757D',
+    accumulation: '#1E3A8A'
+};
+
+function getStatusMeta(score, mode) {
+    return HUNTER_MODES[mode].statusRanges.find(r => score <= r.max);
+}
+
+// -----------------------------------------------
 // Historical data (mock data for demonstration)
+// -----------------------------------------------
 const historicalData = [
     {"data": "Mar/15", "score": 2.45, "status": "Baixo Risco"},
     {"data": "Jun/15", "score": 2.67, "status": "Baixo Risco"},
@@ -78,8 +126,50 @@ const historicalData = [
     {"data": "Dez/24", "score": 6.45, "status": "Aproximação"},
     {"data": "Mar/25", "score": 6.12, "status": "Aproximação"},
     {"data": "Jun/25", "score": 6.67, "status": "Aproximação"},
-    {"data": "Set/25", "score": 6.95, "status": "Aproximação"}
+    {"data": "Set/25", "score": 6.95, "status": "Aproximação"},
+    {"data": "Dez/25", "score": 8.95, "status": "Alto Risco"},
+    {"data": "Mar/26", "score": 6.35, "status": "Aproximação"},
+    {"data": "Jun/26", "score": 3.80, "status": "Baixo Risco"}
 ];
+
+// Bottom Hunter historical mirror — heuristic (10 - Topo score), since top and
+// bottom conditions are roughly inversely correlated across a market cycle.
+// Same illustrative/mock nature as historicalData above, not real on-chain history.
+const bottomHistoricalData = historicalData.map(d => {
+    const score = Math.round((10 - d.score) * 100) / 100;
+    return { data: d.data, score, status: getStatusMeta(score, 'bottom').label };
+});
+
+function getHistoricalData(mode) {
+    return mode === 'topo' ? historicalData : bottomHistoricalData;
+}
+
+// -----------------------------------------------
+// Shared hunter-mode state — one global toggle drives every section
+// -----------------------------------------------
+let currentHunterMode = 'topo';
+const hunterModeListeners = [];
+
+function onHunterModeChange(fn) {
+    hunterModeListeners.push(fn);
+}
+
+function setHunterMode(mode) {
+    if (mode === currentHunterMode) return;
+    currentHunterMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        const isActive = btn.dataset.mode === mode;
+        btn.classList.toggle('mode-btn--active', isActive);
+        btn.setAttribute('aria-selected', String(isActive));
+    });
+    hunterModeListeners.forEach(fn => fn(mode));
+}
+
+function initGlobalModeToggle() {
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => setHunterMode(btn.dataset.mode));
+    });
+}
 
 let chartInstance;
 
@@ -146,23 +236,78 @@ function initSmoothScroll() {
 }
 
 // -----------------------------------------------
-// 2. Chart.js setup
+// 2. Indicators grid ("Indicadores do Algoritmo")
 // -----------------------------------------------
-function buildChart() {
+function renderIndicatorsSection(mode) {
+    const grid = document.getElementById('indicators-grid');
+    const title = document.getElementById('indicators-title');
+    if (!grid) return;
+
+    const config = HUNTER_MODES[mode];
+    if (title) title.textContent = `Indicadores do Algoritmo — ${config.label}`;
+
+    grid.innerHTML = config.indicators.map(ind => `
+        <div class="indicator-card">
+            <div class="indicator-card__header">
+                <h3>${ind.name}</h3>
+                <span class="indicator-weight">(${ind.weight}%)</span>
+            </div>
+            <p class="indicator-description">${ind.description}</p>
+            <small class="indicator-boundaries">Intervalo: 0 → 10</small>
+        </div>
+    `).join('');
+}
+
+function initIndicatorsSection() {
+    renderIndicatorsSection(currentHunterMode);
+    onHunterModeChange(renderIndicatorsSection);
+}
+
+// -----------------------------------------------
+// 3. Chart.js setup
+// -----------------------------------------------
+function formatRangeThreshold(range, index, ranges) {
+    if (index === 0) return `≤ ${range.max.toFixed(1)}`;
+    if (index === ranges.length - 1) return `≥ ${ranges[index - 1].max.toFixed(1)}`;
+    return `${ranges[index - 1].max.toFixed(1)} - ${range.max.toFixed(1)}`;
+}
+
+function renderChartLegend(mode) {
+    const legend = document.getElementById('chart-legend');
+    if (!legend) return;
+    const ranges = HUNTER_MODES[mode].statusRanges;
+
+    legend.innerHTML = ranges.map((range, i) => `
+        <div class="legend-item">
+            <div class="legend-color" style="background:${STATUS_COLOR_HEX[range.cssClass]}"></div>
+            <span>${range.label} (${formatRangeThreshold(range, i, ranges)})</span>
+        </div>
+    `).join('');
+}
+
+function buildChart(mode) {
     const ctx = document.getElementById('historical-chart');
     if (!ctx) return;
 
-    const labels = historicalData.map(d => d.data);
-    const scores = historicalData.map(d => d.score);
+    const config = HUNTER_MODES[mode];
+    const data = getHistoricalData(mode);
+    const labels = data.map(d => d.data);
+    const scores = data.map(d => d.score);
+    const pointColors = data.map(d => STATUS_COLOR_HEX[getStatusMeta(d.score, mode).cssClass]);
+    const ranges = config.statusRanges;
+    const midColor = STATUS_COLOR_HEX[ranges[1].cssClass];
+    const highColor = STATUS_COLOR_HEX[ranges[2].cssClass];
 
-    const pointColors = scores.map(s => (s < 6 ? '#28A745' : s < 8 ? '#FFA500' : '#DC3545'));
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
 
     chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             labels,
             datasets: [{
-                label: 'Score Topo Hunter',
+                label: config.chartLabel,
                 data: scores,
                 fill: true,
                 borderColor: '#007BFF',
@@ -182,15 +327,13 @@ function buildChart() {
                 tooltip: {
                     callbacks: {
                         title: function(context) {
-                            const index = context[0].dataIndex;
-                            return historicalData[index].data;
+                            return data[context[0].dataIndex].data;
                         },
                         label: function(context) {
-                            const index = context.dataIndex;
-                            const data = historicalData[index];
+                            const d = data[context.dataIndex];
                             return [
-                                `Score: ${data.score.toFixed(2)}`,
-                                `Status: ${data.status}`
+                                `Score: ${d.score.toFixed(2)}`,
+                                `Status: ${d.status}`
                             ];
                         }
                     }
@@ -201,12 +344,12 @@ function buildChart() {
                     suggestedMin: 0,
                     suggestedMax: 10,
                     grid: {
-                        color: (ctx) => {
-                            if (ctx.tick.value === 6) return '#FFA500';
-                            if (ctx.tick.value === 8) return '#C21807';
+                        color: (c) => {
+                            if (c.tick.value === 6) return midColor;
+                            if (c.tick.value === 8) return highColor;
                             return 'rgba(0,0,0,0.1)';
                         },
-                        lineWidth: (ctx) => (ctx.tick.value === 6 || ctx.tick.value === 8 ? 2 : 1)
+                        lineWidth: (c) => (c.tick.value === 6 || c.tick.value === 8 ? 2 : 1)
                     }
                 },
                 x: {
@@ -219,50 +362,105 @@ function buildChart() {
     });
 }
 
+function initChartSection() {
+    renderChartLegend(currentHunterMode);
+    buildChart(currentHunterMode);
+    onHunterModeChange(mode => {
+        renderChartLegend(mode);
+        buildChart(mode);
+    });
+}
+
 // -----------------------------------------------
-// 3. Table generation + sort/search/filter
+// 4. Table generation + sort/search/filter
 // -----------------------------------------------
-function generateMockData(score) {
-    // Generate realistic mock data based on score
-    const normalizedScore = score / 10;
-    
+const TABLE_COLUMN_META = {
+    mvrv: { label: 'MVRV', suffix: '' },
+    mayer: { label: 'Múltiplo Mayer', suffix: '' },
+    coinbase: { label: 'Ranking Coinbase', suffix: '' },
+    m2: { label: 'Expansão M2 (%)', suffix: '%' },
+    rates: { label: 'Taxa Juros (%)', suffix: '%' },
+    fear: { label: 'Fear & Greed', suffix: '' },
+    liq: { label: 'Liquidez Mundial', suffix: '' },
+    ath: { label: 'Drawdown ATH (%)', suffix: '%' }
+};
+
+function generateMockRow(score, mode) {
+    // Generate illustrative per-indicator readings from the period's score,
+    // same demonstration purpose as historicalData/bottomHistoricalData above.
+    const t = score / 10;
+
+    if (mode === 'topo') {
+        return {
+            mvrv: (2.5 + t * 1.5).toFixed(2),
+            mayer: (1.0 + t * 1.2).toFixed(2),
+            coinbase: Math.round(400 - t * 350),
+            m2: (t * 0.8).toFixed(2),
+            rates: (5.5 - t * 5.0).toFixed(2),
+            fear: Math.round(20 + t * 70),
+            liq: Math.round(20 + t * 80)
+        };
+    }
+
     return {
-        mvrv: (2.5 + normalizedScore * 1.5).toFixed(2),
-        mayer: (1.0 + normalizedScore * 1.2).toFixed(2),
-        coinbase: Math.round(400 - normalizedScore * 350),
-        m2: (normalizedScore * 0.8).toFixed(2),
-        juros: (5.5 - normalizedScore * 5.0).toFixed(2),
-        fg: Math.round(20 + normalizedScore * 70),
-        liquidity: Math.round(20 + normalizedScore * 80)
+        mvrv: (0.6 + (1 - t) * 1.8).toFixed(2),
+        mayer: (0.5 + (1 - t) * 1.3).toFixed(2),
+        coinbase: Math.round(60 + t * 300),
+        m2: ((1 - t) * 6 - 1).toFixed(2),
+        rates: (2.0 + t * 4.0).toFixed(2),
+        fear: Math.round(75 - t * 60),
+        liq: Math.round(80 - t * 60),
+        ath: Math.round(5 + t * 70)
     };
 }
 
-function buildTable() {
+function rowTintClass(cssClass, mode) {
+    if (cssClass === 'warning') return 'approximation-row';
+    if (cssClass === 'error') return 'high-risk-row';
+    if (cssClass === 'accumulation') return 'row-tint--accumulation';
+    if (cssClass === 'success' && mode === 'bottom') return 'row-tint--opportunity';
+    return '';
+}
+
+function renderTableHeader(mode) {
+    const headerRow = document.getElementById('table-header-row');
+    if (!headerRow) return;
+    const config = HUNTER_MODES[mode];
+    const cols = ['Período', ...config.indicators.map(ind => TABLE_COLUMN_META[ind.id].label), 'Score Final', 'Status'];
+    headerRow.innerHTML = cols.map(c => `<th>${c}</th>`).join('');
+}
+
+function renderStatusFilterOptions(mode) {
+    const statusFilter = document.getElementById('status-filter');
+    if (!statusFilter) return;
+    const ranges = HUNTER_MODES[mode].statusRanges;
+    statusFilter.innerHTML = '<option value="all">Todos os Status</option>' +
+        ranges.map(r => `<option value="${r.label}">${r.label}</option>`).join('');
+}
+
+function renderTableRows(mode, data) {
     const tbody = document.getElementById('data-table-body');
     if (!tbody) return;
+    const config = HUNTER_MODES[mode];
 
     tbody.innerHTML = '';
-    historicalData.forEach(d => {
+    data.forEach(d => {
+        const meta = getStatusMeta(d.score, mode);
+        const mockRow = generateMockRow(d.score, mode);
+
         const tr = document.createElement('tr');
-        if (d.status === 'Aproximação') tr.classList.add('approximation-row');
-        if (d.status === 'Alto Risco') tr.classList.add('high-risk-row');
-        
-        const mockData = generateMockData(d.score);
-        const statusClass = d.status === 'Baixo Risco' ? 'success' : 
-                           d.status === 'Aproximação' ? 'warning' : 'error';
-        
-        tr.innerHTML = `
-            <td>${d.data}</td>
-            <td>${mockData.mvrv}</td>
-            <td>${mockData.mayer}</td>
-            <td>${mockData.coinbase}</td>
-            <td>${mockData.m2}%</td>
-            <td>${mockData.juros}%</td>
-            <td>${mockData.fg}</td>
-            <td>${mockData.liquidity}</td>
-            <td class="font-weight-bold">${d.score.toFixed(2)}</td>
-            <td><span class="status status--${statusClass}">${d.status}</span></td>
-        `;
+        const tint = rowTintClass(meta.cssClass, mode);
+        if (tint) tr.classList.add(tint);
+
+        const cells = [`<td>${d.data}</td>`];
+        config.indicators.forEach(ind => {
+            const meta2 = TABLE_COLUMN_META[ind.id];
+            cells.push(`<td>${mockRow[ind.id]}${meta2.suffix}</td>`);
+        });
+        cells.push(`<td class="font-weight-bold">${d.score.toFixed(2)}</td>`);
+        cells.push(`<td><span class="status status--${meta.cssClass}">${meta.label}</span></td>`);
+
+        tr.innerHTML = cells.join('');
         tbody.appendChild(tr);
     });
 }
@@ -270,10 +468,11 @@ function buildTable() {
 function initTableControls() {
     const periodFilter = document.getElementById('period-filter');
     const statusFilter = document.getElementById('status-filter');
+    if (!periodFilter || !statusFilter) return;
 
     const applyFilters = () => {
-        let data = [...historicalData];
-        
+        let data = [...getHistoricalData(currentHunterMode)];
+
         if (periodFilter.value !== 'all') {
             const [start, end] = periodFilter.value.split('-').map(Number);
             data = data.filter(d => {
@@ -282,95 +481,30 @@ function initTableControls() {
                 return fullYr >= start && fullYr <= end;
             });
         }
-        
+
         if (statusFilter.value !== 'all') {
             data = data.filter(d => d.status === statusFilter.value);
         }
-        
-        renderRows(data);
+
+        renderTableRows(currentHunterMode, data);
     };
 
     [periodFilter, statusFilter].forEach(el => el.addEventListener('change', applyFilters));
 
-    const renderRows = (data) => {
-        const tbody = document.getElementById('data-table-body');
-        tbody.innerHTML = '';
-        data.forEach(d => {
-            const tr = document.createElement('tr');
-            if (d.status === 'Aproximação') tr.classList.add('approximation-row');
-            if (d.status === 'Alto Risco') tr.classList.add('high-risk-row');
-            
-            const mockData = generateMockData(d.score);
-            const statusClass = d.status === 'Baixo Risco' ? 'success' : 
-                               d.status === 'Aproximação' ? 'warning' : 'error';
-            
-            tr.innerHTML = `
-                <td>${d.data}</td>
-                <td>${mockData.mvrv}</td>
-                <td>${mockData.mayer}</td>
-                <td>${mockData.coinbase}</td>
-                <td>${mockData.m2}%</td>
-                <td>${mockData.juros}%</td>
-                <td>${mockData.fg}</td>
-                <td>${mockData.liquidity}</td>
-                <td class="font-weight-bold">${d.score.toFixed(2)}</td>
-                <td><span class="status status--${statusClass}">${d.status}</span></td>
-            `;
-            tbody.appendChild(tr);
-        });
-    };
+    function refreshForMode(mode) {
+        renderTableHeader(mode);
+        renderStatusFilterOptions(mode);
+        statusFilter.value = 'all';
+        applyFilters();
+    }
 
-    applyFilters();
+    refreshForMode(currentHunterMode);
+    onHunterModeChange(refreshForMode);
 }
 
 // -----------------------------------------------
-// 4. Simulator (Topo Hunter / Bottom Hunter)
+// 5. Simulator (Topo Hunter / Bottom Hunter)
 // -----------------------------------------------
-
-// Topo Hunter looks for cycle-top euphoria; Bottom Hunter mirrors the same
-// seven indicators plus an ATH-drawdown indicator, but scores the opposite
-// (capitulation/apathy) conditions that historically precede a new bull cycle.
-const HUNTER_MODES = {
-    topo: {
-        label: 'Topo Hunter',
-        scoreTitle: 'Score de Topo de Ciclo',
-        indicators: [
-            { id: 'mvrv', name: 'MVRV', weight: 20, source: 'manual', help: 'Sem API pública gratuita confiável para o MVRV real. Consulte um agregador on-chain (ex: LookIntoBitcoin, CryptoQuant) e insira o valor manualmente.' },
-            { id: 'mayer', name: 'Múltiplo de Mayer', weight: 10, source: 'live' },
-            { id: 'coinbase', name: 'Ranking Coinbase', weight: 10, source: 'live' },
-            { id: 'm2', name: 'Expansão M2 EUA', weight: 25, source: 'live' },
-            { id: 'rates', name: 'Taxa de Juros EUA', weight: 15, source: 'live' },
-            { id: 'fear', name: 'Fear & Greed', weight: 10, source: 'live' },
-            { id: 'liq', name: 'Liquidez Mundial', weight: 10, source: 'manual', help: 'Índice composto proprietário, sem fonte pública única — insira manualmente.' }
-        ],
-        defaults: { mvrv: 6.5, mayer: 4.2, coinbase: 7.2, m2: 7.8, rates: 5.2, fear: 8.6, liq: 7.5 },
-        statusRanges: [
-            { max: 6, label: 'Baixo Risco', cssClass: 'success' },
-            { max: 8, label: 'Aproximação', cssClass: 'warning' },
-            { max: Infinity, label: 'Alto Risco', cssClass: 'error' }
-        ]
-    },
-    bottom: {
-        label: 'Bottom Hunter',
-        scoreTitle: 'Score de Fundo de Ciclo',
-        indicators: [
-            { id: 'mvrv', name: 'MVRV', weight: 19, source: 'manual', help: 'Sem API pública gratuita confiável para o MVRV real. Consulte um agregador on-chain (ex: LookIntoBitcoin, CryptoQuant) e insira o valor manualmente.' },
-            { id: 'mayer', name: 'Múltiplo de Mayer', weight: 9.5, source: 'live' },
-            { id: 'coinbase', name: 'Ranking Coinbase', weight: 9.5, source: 'live' },
-            { id: 'm2', name: 'Expansão M2 EUA', weight: 23.75, source: 'live' },
-            { id: 'rates', name: 'Taxa de Juros EUA', weight: 14.25, source: 'live' },
-            { id: 'fear', name: 'Fear & Greed', weight: 9.5, source: 'live' },
-            { id: 'liq', name: 'Liquidez Mundial', weight: 9.5, source: 'manual', help: 'Índice composto proprietário, sem fonte pública única — insira manualmente.' },
-            { id: 'ath', name: 'Drawdown do ATH', weight: 5, source: 'live' }
-        ],
-        defaults: { mvrv: 3.0, mayer: 3.5, coinbase: 2.8, m2: 3.2, rates: 6.5, fear: 3.0, liq: 3.5, ath: 4.5 },
-        statusRanges: [
-            { max: 6, label: 'Sem Sinal de Fundo', cssClass: 'info' },
-            { max: 8, label: 'Zona de Acumulação', cssClass: 'accumulation' },
-            { max: Infinity, label: 'Oportunidade de Fundo', cssClass: 'success' }
-        ]
-    }
-};
 
 // Historical bounds used to normalize raw fetched metrics onto the 0-10 scale
 // the simulator works with. These are heuristic (industry rules of thumb),
@@ -487,16 +621,14 @@ function initSimulator() {
     const calcButton = document.getElementById('update-simulator');
     const fetchButton = document.getElementById('fetch-live-data');
     const fetchStatusMsg = document.getElementById('fetch-status-msg');
-    const modeButtons = document.querySelectorAll('.mode-btn');
 
     if (!inputsContainer) return;
 
-    let currentMode = 'topo';
     // Keeps whatever value the user has typed/fetched per indicator, per mode.
     const values = { topo: { ...HUNTER_MODES.topo.defaults }, bottom: { ...HUNTER_MODES.bottom.defaults } };
 
     function renderInputs() {
-        const config = HUNTER_MODES[currentMode];
+        const config = HUNTER_MODES[currentHunterMode];
         inputsContainer.innerHTML = '';
 
         config.indicators.forEach(ind => {
@@ -510,14 +642,14 @@ function initSimulator() {
 
             group.innerHTML = `
                 <label for="sim-${ind.id}" class="form-label">${ind.name}${manualBadge}</label>
-                <input type="number" id="sim-${ind.id}" class="form-control" min="0" max="10" step="0.1" value="${values[currentMode][ind.id]}">
+                <input type="number" id="sim-${ind.id}" class="form-control" min="0" max="10" step="0.1" value="${values[currentHunterMode][ind.id]}">
                 <span class="input-weight">Peso: ${ind.weight}%</span>
             `;
             inputsContainer.appendChild(group);
 
             const input = group.querySelector('input');
             input.addEventListener('input', () => {
-                values[currentMode][ind.id] = parseFloat(input.value) || 0;
+                values[currentHunterMode][ind.id] = parseFloat(input.value) || 0;
                 calculateScore();
             });
         });
@@ -526,23 +658,23 @@ function initSimulator() {
     }
 
     function calculateScore() {
-        const config = HUNTER_MODES[currentMode];
+        const config = HUNTER_MODES[currentHunterMode];
         let totalScore = 0;
 
         config.indicators.forEach(ind => {
-            const value = values[currentMode][ind.id] || 0;
+            const value = values[currentHunterMode][ind.id] || 0;
             totalScore += value * (ind.weight / 100);
         });
 
         scoreDisplay.textContent = totalScore.toFixed(2);
 
-        const range = config.statusRanges.find(r => totalScore <= r.max);
+        const range = getStatusMeta(totalScore, currentHunterMode);
         statusDisplay.textContent = range.label;
         statusDisplay.className = `status status--${range.cssClass}`;
 
         breakdownList.innerHTML = '';
         config.indicators.forEach(ind => {
-            const value = values[currentMode][ind.id] || 0;
+            const value = values[currentHunterMode][ind.id] || 0;
             const contribution = value * (ind.weight / 100);
 
             const breakdownItem = document.createElement('div');
@@ -555,22 +687,6 @@ function initSimulator() {
         });
     }
 
-    function setMode(mode) {
-        currentMode = mode;
-        modeButtons.forEach(btn => {
-            const isActive = btn.dataset.mode === mode;
-            btn.classList.toggle('mode-btn--active', isActive);
-            btn.setAttribute('aria-selected', String(isActive));
-        });
-        fetchStatusMsg.textContent = '';
-        renderInputs();
-        calculateScore();
-    }
-
-    modeButtons.forEach(btn => {
-        btn.addEventListener('click', () => setMode(btn.dataset.mode));
-    });
-
     if (calcButton) {
         calcButton.addEventListener('click', calculateScore);
     }
@@ -582,17 +698,17 @@ function initSimulator() {
             fetchStatusMsg.textContent = 'Buscando dados ao vivo...';
 
             const { raw, failed } = await fetchLiveMetrics();
-            const config = HUNTER_MODES[currentMode];
+            const config = HUNTER_MODES[currentHunterMode];
             let updated = 0;
 
             config.indicators.forEach(ind => {
                 if (ind.source !== 'live') return;
-                const normalized = normalizeRawMetric(ind.id, raw[ind.id], currentMode);
+                const normalized = normalizeRawMetric(ind.id, raw[ind.id], currentHunterMode);
                 const group = inputsContainer.querySelector(`[data-indicator="${ind.id}"]`);
                 if (normalized !== null && !failed.includes(ind.id)) {
-                    values[currentMode][ind.id] = Math.round(normalized * 100) / 100;
+                    values[currentHunterMode][ind.id] = Math.round(normalized * 100) / 100;
                     if (group) {
-                        group.querySelector('input').value = values[currentMode][ind.id];
+                        group.querySelector('input').value = values[currentHunterMode][ind.id];
                         group.classList.remove('input-group--stale');
                     }
                     updated += 1;
@@ -615,28 +731,34 @@ function initSimulator() {
 
     renderInputs();
     calculateScore();
+
+    onHunterModeChange(() => {
+        fetchStatusMsg.textContent = '';
+        renderInputs();
+        calculateScore();
+    });
 }
 
 // -----------------------------------------------
-// 5. Copy to clipboard functionality
+// 6. Copy to clipboard functionality
 // -----------------------------------------------
 function initCopyFunctionality() {
     const donationAddresses = document.querySelectorAll('.donation-address');
-    
+
     donationAddresses.forEach(address => {
         const code = address.querySelector('code');
         if (code) {
             address.style.cursor = 'pointer';
             address.title = 'Clique para copiar';
-            
+
             address.addEventListener('click', function() {
                 navigator.clipboard.writeText(code.textContent).then(() => {
                     const originalText = code.textContent;
                     const originalColor = code.style.color;
-                    
+
                     code.textContent = 'Copiado!';
                     code.style.color = '#28A745';
-                    
+
                     setTimeout(() => {
                         code.textContent = originalText;
                         code.style.color = originalColor;
@@ -650,7 +772,7 @@ function initCopyFunctionality() {
 }
 
 // -----------------------------------------------
-// 6. Main initialization
+// 7. Main initialization
 // -----------------------------------------------
 async function waitForChartJS() {
     return new Promise((resolve) => {
@@ -670,25 +792,26 @@ async function waitForChartJS() {
 // Initialize everything when DOM is ready
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('Initializing Topo Hunter application...');
-    
+
     // Wait for Chart.js to load
     await waitForChartJS();
-    
+
     // Initialize all modules
+    initGlobalModeToggle();
     initNavigation();
     initScrollHighlight();
     initSmoothScroll();
-    buildChart();
-    buildTable();
+    initIndicatorsSection();
+    initChartSection();
     initTableControls();
     initSimulator();
     initCopyFunctionality();
-    
+
     console.log('Topo Hunter application initialized successfully');
 });
 
 // -----------------------------------------------
-// 7. Utility functions and error handling
+// 8. Utility functions and error handling
 // -----------------------------------------------
 window.addEventListener('error', function(e) {
     console.error('JavaScript error:', e.error);

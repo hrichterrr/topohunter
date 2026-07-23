@@ -68,67 +68,22 @@
             </div>
         </section>
 
+        <!-- Global Topo Hunter / Bottom Hunter toggle — drives indicators, chart, table and simulator -->
+        <div class="hunter-mode-toggle-bar">
+            <div class="container">
+                <div class="hunter-mode-toggle" role="tablist" aria-label="Modo de análise">
+                    <button type="button" class="mode-btn mode-btn--active" data-mode="topo" role="tab" aria-selected="true">🔺 Topo Hunter</button>
+                    <button type="button" class="mode-btn" data-mode="bottom" role="tab" aria-selected="false">🔻 Bottom Hunter</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Indicators Section -->
         <section id="indicadores" class="section">
             <div class="container">
-                <h2 class="section__title">Indicadores do Algoritmo</h2>
-                <div class="indicators-grid">
-                    <div class="indicator-card">
-                        <div class="indicator-card__header">
-                            <h3>MVRV</h3>
-                            <span class="indicator-weight">(20%)</span>
-                        </div>
-                        <p class="indicator-description">Market Value to Realized Value – mede sobrecompra on-chain.</p>
-                        <small class="indicator-boundaries">Intervalo: 0 → 10</small>
-                    </div>
-                    <div class="indicator-card">
-                        <div class="indicator-card__header">
-                            <h3>Múltiplo de Mayer</h3>
-                            <span class="indicator-weight">(10%)</span>
-                        </div>
-                        <p class="indicator-description">Preço / média móvel de 200 dias.</p>
-                        <small class="indicator-boundaries">Intervalo: 0 → 10</small>
-                    </div>
-                    <div class="indicator-card">
-                        <div class="indicator-card__header">
-                            <h3>Ranking Coinbase</h3>
-                            <span class="indicator-weight">(10%)</span>
-                        </div>
-                        <p class="indicator-description">Posição do app Coinbase na App Store como proxy de interesse de varejo.</p>
-                        <small class="indicator-boundaries">Intervalo: 0 → 10</small>
-                    </div>
-                    <div class="indicator-card">
-                        <div class="indicator-card__header">
-                            <h3>Expansão M2 EUA</h3>
-                            <span class="indicator-weight">(25%)</span>
-                        </div>
-                        <p class="indicator-description">Crescimento mensal anualizado da base monetária americana.</p>
-                        <small class="indicator-boundaries">Intervalo: 0 → 10</small>
-                    </div>
-                    <div class="indicator-card">
-                        <div class="indicator-card__header">
-                            <h3>Taxa de Juros EUA</h3>
-                            <span class="indicator-weight">(15%)</span>
-                        </div>
-                        <p class="indicator-description">Federal Funds Rate – aperto ou afrouxamento monetário.</p>
-                        <small class="indicator-boundaries">Intervalo: 0 → 10</small>
-                    </div>
-                    <div class="indicator-card">
-                        <div class="indicator-card__header">
-                            <h3>Fear & Greed</h3>
-                            <span class="indicator-weight">(10%)</span>
-                        </div>
-                        <p class="indicator-description">Índice de sentimento de mercado cripto.</p>
-                        <small class="indicator-boundaries">Intervalo: 0 → 10</small>
-                    </div>
-                    <div class="indicator-card">
-                        <div class="indicator-card__header">
-                            <h3>Liquidez Mundial</h3>
-                            <span class="indicator-weight">(10%)</span>
-                        </div>
-                        <p class="indicator-description">Índice composto de liquidez global.</p>
-                        <small class="indicator-boundaries">Intervalo: 0 → 10</small>
-                    </div>
+                <h2 class="section__title" id="indicators-title">Indicadores do Algoritmo</h2>
+                <div class="indicators-grid" id="indicators-grid">
+                    <!-- Populated by JavaScript per mode (Topo Hunter / Bottom Hunter) -->
                 </div>
             </div>
         </section>
@@ -136,21 +91,10 @@
         <!-- Chart Section -->
         <section id="grafico" class="section">
             <div class="container">
-                <h2 class="section__title">Histórico Gráfico</h2>
-                
-                <div class="chart-legend">
-                    <div class="legend-item">
-                        <div class="legend-color legend-color--low"></div>
-                        <span>Baixo Risco (≤ 6.0)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color legend-color--medium"></div>
-                        <span>Aproximação (6.0 - 8.0)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color legend-color--high"></div>
-                        <span>Alto Risco (≥ 8.0)</span>
-                    </div>
+                <h2 class="section__title" id="chart-title">Histórico Gráfico</h2>
+
+                <div class="chart-legend" id="chart-legend">
+                    <!-- Populated by JavaScript per mode -->
                 </div>
 
                 <div class="chart-container">
@@ -189,17 +133,8 @@
                 <div class="table-wrapper">
                     <table class="table">
                         <thead>
-                            <tr>
-                                <th>Período</th>
-                                <th>MVRV</th>
-                                <th>Múltiplo Mayer</th>
-                                <th>Ranking Coinbase</th>
-                                <th>Expansão M2 (%)</th>
-                                <th>Taxa Juros (%)</th>
-                                <th>Fear & Greed</th>
-                                <th>Liquidez Mundial</th>
-                                <th>Score Final</th>
-                                <th>Status</th>
+                            <tr id="table-header-row">
+                                <!-- Populated by JavaScript per mode -->
                             </tr>
                         </thead>
                         <tbody id="data-table-body">
@@ -214,11 +149,6 @@
         <section id="simulador" class="section">
             <div class="container">
                 <h2 class="section__title">Simulador</h2>
-
-                <div class="hunter-mode-toggle" role="tablist" aria-label="Modo do simulador">
-                    <button type="button" class="mode-btn mode-btn--active" data-mode="topo" role="tab" aria-selected="true">🔺 Topo Hunter</button>
-                    <button type="button" class="mode-btn" data-mode="bottom" role="tab" aria-selected="false">🔻 Bottom Hunter</button>
-                </div>
 
                 <div class="simulator-container">
                     <div class="simulator-inputs" id="simulator-inputs">

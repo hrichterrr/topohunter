@@ -996,6 +996,14 @@ select.form-control {
     background: #FFEDEC !important;
 }
 
+.table tbody tr.row-tint--accumulation {
+    background: #E8EEFB !important;
+}
+
+.table tbody tr.row-tint--opportunity {
+    background: #E9F7EC !important;
+}
+
 .table-wrapper {
     overflow-x: auto;
     border-radius: var(--radius-lg);
@@ -1152,13 +1160,25 @@ select.form-control {
 }
 
 /* Hunter mode toggle (Topo Hunter / Bottom Hunter) */
+.hunter-mode-toggle-bar {
+    background: var(--bitcoin-dark-blue);
+    border-top: 2px solid var(--bitcoin-gold);
+    border-bottom: 2px solid var(--bitcoin-gold);
+    padding: var(--space-16) 0;
+}
+
+.hunter-mode-toggle-bar .container {
+    display: flex;
+    justify-content: center;
+}
+
 .hunter-mode-toggle {
     display: inline-flex;
     gap: var(--space-4);
     background: var(--color-secondary);
     padding: var(--space-4);
     border-radius: var(--radius-full);
-    margin-bottom: var(--space-24);
+    margin-bottom: 0;
 }
 
 .mode-btn {
